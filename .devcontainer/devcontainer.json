@@ -14,11 +14,12 @@
       "settings": {
         "terminal.integrated.fontSize": 15,
         "terminal.integrated.cwd": "/home/vscode",
+        "terminal.integrated.defaultProfile.linux": "bash",
         "workbench.startupEditor": "none"
       }
     }
   },
-  "postCreateCommand": "sudo curl -sSL \"https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.$(uname -m)\" -o /usr/local/bin/ttyd && sudo chmod +x /usr/local/bin/ttyd && chmod +x .devcontainer/*.sh",
+  "postCreateCommand": "sudo curl -sSL \"https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.$(uname -m)\" -o /usr/local/bin/ttyd && sudo chmod +x /usr/local/bin/ttyd && chmod +x .devcontainer/*.sh bin/*",
   "postStartCommand": "bash .devcontainer/start-terminal.sh",
   "postAttachCommand": "bash .devcontainer/start-terminal.sh",
   "remoteUser": "vscode"
