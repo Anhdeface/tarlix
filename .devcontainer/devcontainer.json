@@ -17,7 +17,8 @@
       }
     }
   },
-  "postCreateCommand": "sudo curl -sSL \"https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.$(uname -m)\" -o /usr/local/bin/ttyd && sudo chmod +x /usr/local/bin/ttyd && chmod +x .devcontainer/start-terminal.sh",
+  "postCreateCommand": "sudo curl -sSL \"https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.$(uname -m)\" -o /usr/local/bin/ttyd && sudo chmod +x /usr/local/bin/ttyd && chmod +x .devcontainer/*.sh",
   "postStartCommand": "bash .devcontainer/start-terminal.sh",
+  "postAttachCommand": "bash .devcontainer/start-terminal.sh",
   "remoteUser": "vscode"
 }
