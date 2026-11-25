@@ -9,4 +9,4 @@ cat << 'EOF'
 EOF
 echo "User: $(whoami) | Dir: $(pwd)"
 echo ""
-exec zsh
+exec bash
