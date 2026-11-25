@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+# Pure-Bash lightweight fuzzy finder (fzf-lite) for Tarlix
+
+set -u
+
+ITEMS=()
+if [ ! -t 0 ]; then
+  while IFS= read -r line; do
+    ITEMS+=("$line")
+  done
+else
+  while IFS= read -r line; do
+    ITEMS+=("$line")
+  done < <(find . -maxdepth 4 -not -path '*/.*' 2>/dev/null | sed 's|^\./||' | sort)
+fi
+
+[ ${#ITEMS[@]} -eq 0 ] && exit 1
+
+QUERY=""
+SEL=0
+MAX_SHOW=12
+FILTERED=()
+
+filter_items() {
+  FILTERED=()
+  local q_lower="${QUERY,,}"
+  local tokens=($q_lower)
+  local item item_lower tok match
+  for item in "${ITEMS[@]}"; do
+    if [ ${#tokens[@]} -eq 0 ]; then
+      FILTERED+=("$item")
+      continue
+    fi
+    item_lower="${item,,}"
+    match=1
+    for tok in "${tokens[@]}"; do
+      if [[ "$item_lower" != *"$tok"* ]]; then
+        match=0
+        break
+      fi
+    done
+    [ $match -eq 1 ] && FILTERED+=("$item")
+  done
+  local count=${#FILTERED[@]}
+  if [ $count -eq 0 ]; then
+    SEL=0
+  elif [ $SEL -ge $count ]; then
+    SEL=$((count - 1))
+  fi
+}
+
+cleanup() {
+  printf '\033[?25h\033[?1049l' >/dev/tty 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
+printf '\033[?1049h\033[?25l' >/dev/tty
+
+draw() {
+  local count=${#FILTERED[@]}
+  local start=0
+  if [ $SEL -ge $MAX_SHOW ]; then
+    start=$((SEL - MAX_SHOW + 1))
+  fi
+  local end=$((start + MAX_SHOW))
+  [ $end -gt $count ] && end=$count
+
+  {
+    printf '\033[H\033[2J'
+    printf '\033[1;36m>\033[0m %s\033[K\n' "$QUERY"
+    printf '\033[90m  %d/%d (Up/Down: move, Enter: select, Esc: cancel)\033[0m\n' "$count" "${#ITEMS[@]}"
+    for ((i = start; i < end; i++)); do
+      if [ $i -eq $SEL ]; then
+        printf '\033[1;32m> \033[7m%s\033[0m\n' "${FILTERED[i]}"
+      else
+        printf '  %s\n' "${FILTERED[i]}"
+      fi
+    done
+  } >/dev/tty
+}
+
+filter_items
+draw
+
+while IFS= read -rsn1 key </dev/tty; do
+  case "$key" in
+    "")
+      if [ ${#FILTERED[@]} -gt 0 ]; then
+        RESULT="${FILTERED[SEL]}"
+        cleanup
+        trap - EXIT INT TERM
+        printf '%s\n' "$RESULT"
+        exit 0
+      fi
+      ;;
+    $'\x1b')
+      read -rsn2 -t 0.05 seq </dev/tty || seq=""
+      case "$seq" in
+        "[A") [ $SEL -gt 0 ] && SEL=$((SEL - 1)) ;;
+        "[B") [ $((SEL + 1)) -lt ${#FILTERED[@]} ] && SEL=$((SEL + 1)) ;;
+        "") exit 130 ;;
+      esac
+      ;;
+    $'\x7f'|$'\x08')
+      [ -n "$QUERY" ] && QUERY="${QUERY%?}"
+      SEL=0
+      filter_items
+      ;;
+    $'\x10')
+      [ $SEL -gt 0 ] && SEL=$((SEL - 1))
+      ;;
+    $'\x0e')
+      [ $((SEL + 1)) -lt ${#FILTERED[@]} ] && SEL=$((SEL + 1))
+      ;;
+    $'\x15')
+      QUERY=""
+      SEL=0
+      filter_items
+      ;;
+    *)
+      if [[ "$key" =~ [[:print:]] ]]; then
+        QUERY+="$key"
+        SEL=0
+        filter_items
+      fi
+      ;;
+  esac
+  draw
+done
