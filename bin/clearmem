@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# Safe memory, tmpfs & cache cleaner for Tarlix
+
+set -u
+
+C1="\033[1;36m"
+C2="\033[1;32m"
+DIM="\033[90m"
+RESET="\033[0m"
+
+mem_stat() {
+  free -h 2>/dev/null | awk '/^Mem:/ {print $3 " / " $2 " (free: " $7 ")"}'
+}
+
+disk_stat() {
+  df -h / 2>/dev/null | awk 'NR==2 {print $3 " / " $2 " (" $5 ")"}'
+}
+
+BEFORE_MEM=$(mem_stat)
+BEFORE_DISK=$(disk_stat)
+
+printf "${C1}Tarlix Memory & Cache Cleaner${RESET}\n"
+printf "${DIM}Before -> RAM: %s | Disk: %s${RESET}\n" "$BEFORE_MEM" "$BEFORE_DISK"
+
+# 1. Flush filesystem buffers & try dropping Linux page/dentry/inode caches (if container permits)
+sync 2>/dev/null || true
+DROPPED="skipped (container host manages kernel cache)"
+if [ -w /proc/sys/vm/drop_caches ]; then
+  if echo 3 > /proc/sys/vm/drop_caches 2>/dev/null; then
+    DROPPED="dropped (pagecache, dentries, inodes)"
+  fi
+elif command -v sudo >/dev/null 2>&1; then
+  if echo 3 | sudo tee /proc/sys/vm/drop_caches >/dev/null 2>&1; then
+    DROPPED="dropped (pagecache, dentries, inodes)"
+  fi
+fi
+
+# 2. Clean user caches (~/.cache) and package caches
+rm -rf "$HOME/.cache/"* 2>/dev/null || true
+if command -v sudo >/dev/null 2>&1 && command -v apt-get >/dev/null 2>&1; then
+  sudo apt-get clean >/dev/null 2>&1 || true
+fi
+
+# 3. Clean stale temp files in /tmp and RAM-backed /dev/shm (keep ttyd.log & active sockets)
+find /tmp -maxdepth 1 -user "$(id -u)" -type f ! -name 'ttyd.log' -mmin +5 -delete 2>/dev/null || true
+find /dev/shm -maxdepth 1 -user "$(id -u)" -type f -delete 2>/dev/null || true
+
+# 4. Truncate ttyd log if it grows large (>1MB)
+if [ -f /tmp/ttyd.log ] && [ "$(stat -c%s /tmp/ttyd.log 2>/dev/null || echo 0)" -gt 1048576 ]; then
+  : > /tmp/ttyd.log 2>/dev/null || true
+fi
+
+AFTER_MEM=$(mem_stat)
+AFTER_DISK=$(disk_stat)
+
+printf "${C2}Done!${RESET}\n"
+printf "Kernel cache: %s\n" "$DROPPED"
+printf "After  -> RAM: %s | Disk: %s\n\n" "$AFTER_MEM" "$AFTER_DISK"
+printf "${C1}Top RAM processes:${RESET}\n"
+ps -eo pid,pmem,rss,comm --sort=-rss 2>/dev/null | head -n 6 | awk 'NR==1 {printf "  %-7s %-6s %-9s %s\n", $1, $2, "RSS(MB)", $4; next} {printf "  %-7s %-6s %-9.1f %s\n", $1, $2"%", $3/1024, $4}'
