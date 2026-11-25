@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-cd "$HOME"
+cd /home/vscode
 clear
 cat << 'EOF'
 ========================================
@@ -9,4 +9,4 @@ cat << 'EOF'
 EOF
 echo "User: $(whoami) | Dir: $(pwd)"
 echo ""
-exec zsh -l
+exec zsh
