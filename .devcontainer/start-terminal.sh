@@ -2,6 +2,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 if ! command -v ttyd >/dev/null 2>&1; then
   sudo curl -sSL "https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.$(uname -m)" -o /usr/local/bin/ttyd
@@ -9,13 +10,14 @@ if ! command -v ttyd >/dev/null 2>&1; then
 fi
 
 chmod +x "$SCRIPT_DIR/tarlix-shell.sh"
+chmod +x "$REPO_DIR/bin/"* 2>/dev/null || true
 
 if [ "${1:-}" = "--restart" ]; then
-  pkill -x ttyd >/dev/null 2>&1 || true
+  pkill -f "ttyd.*7681" >/dev/null 2>&1 || true
   sleep 0.5
 fi
 
-if ! pgrep -x ttyd >/dev/null 2>&1; then
+if ! pgrep -f "ttyd.*7681" >/dev/null 2>&1; then
   nohup setsid ttyd -W -p 7681 -w /home/vscode \
     -t rendererType=dom \
     -t scrollback=500 \
