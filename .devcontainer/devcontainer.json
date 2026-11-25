@@ -1,15 +1,6 @@
 {
-  "name": "Tarlix Linux Terminal",
-  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
-  "features": {
-    "ghcr.io/devcontainers/features/common-utils:2": {
-      "installZsh": true,
-      "configureZshAsDefaultShell": true,
-      "installOhMyZsh": true
-    },
-    "ghcr.io/devcontainers/features/python:1": {},
-    "ghcr.io/devcontainers/features/node:1": {}
-  },
+  "name": "Tarlix Fast Terminal",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
   "forwardPorts": [7681],
   "portsAttributes": {
     "7681": {
@@ -26,7 +17,6 @@
       }
     }
   },
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y tmux neovim htop jq ripgrep fzf tree build-essential && sudo curl -sSL \"https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.$(uname -m)\" -o /usr/local/bin/ttyd && sudo chmod +x /usr/local/bin/ttyd && chmod +x .devcontainer/start-terminal.sh",
-  "postStartCommand": "bash .devcontainer/start-terminal.sh",
-  "remoteUser": "vscode"
+  "postCreateCommand": "sudo curl -sSL \"https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.$(uname -m)\" -o /usr/local/bin/ttyd && sudo chmod +x /usr/local/bin/ttyd && chmod +x .devcontainer/start-terminal.sh",
+  "postStartCommand": "bash .devcontainer/start-terminal.sh"
 }
