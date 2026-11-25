@@ -19,9 +19,10 @@ fi
 
 if ! pgrep -f "ttyd.*7681" >/dev/null 2>&1; then
   nohup setsid ttyd -W -p 7681 -w /home/vscode \
-    -t rendererType=dom \
+    -t rendererType=canvas \
+    -t cursorBlink=false \
     -t scrollback=500 \
-    -t fontSize=16 \
+    -t fontSize=17 \
     -t cursorStyle=bar \
     -t disableResizeOverlay=true \
     -t disableLeaveAlert=true \
