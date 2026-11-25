@@ -13,6 +13,7 @@
     "vscode": {
       "settings": {
         "terminal.integrated.fontSize": 15,
+        "terminal.integrated.cwd": "/home/vscode",
         "workbench.startupEditor": "none"
       }
     }
