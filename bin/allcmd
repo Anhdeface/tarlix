@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+# Interactive command browser for Tarlix (pure Bash, clean alternate-screen TUI)
+
+set -u
+
+REPO_BIN="/workspaces/tarlix/bin"
+mapfile -t ALL_CMDS < <(compgen -c | sort -u)
+TOTAL=${#ALL_CMDS[@]}
+[ "$TOTAL" -eq 0 ] && exit 1
+
+QUERY=""
+SEL=0
+MAX_SHOW=14
+FILTERED=("${ALL_CMDS[@]}")
+
+filter_cmds() {
+  if [ -z "$QUERY" ]; then
+    FILTERED=("${ALL_CMDS[@]}")
+  else
+    local cmd_list
+    cmd_list=$(printf '%s\n' "${ALL_CMDS[@]}")
+    local tok
+    for tok in $QUERY; do
+      cmd_list=$(printf '%s\n' "$cmd_list" | grep -iF -- "$tok" 2>/dev/null || true)
+    done
+    if [ -z "$cmd_list" ]; then
+      FILTERED=()
+    else
+      mapfile -t FILTERED <<< "$cmd_list"
+    fi
+  fi
+
+  local count=${#FILTERED[@]}
+  if [ "$count" -eq 0 ]; then
+    SEL=0
+  elif [ "$SEL" -ge "$count" ]; then
+    SEL=$((count - 1))
+  fi
+}
+
+cleanup() {
+  printf '\033[?25h\033[?1049l' >/dev/tty 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
+printf '\033[?1049h\033[?25l' >/dev/tty
+
+draw() {
+  local count=${#FILTERED[@]}
+  local start=0
+  if [ "$SEL" -ge "$MAX_SHOW" ]; then
+    start=$((SEL - MAX_SHOW + 1))
+  fi
+  local end=$((start + MAX_SHOW))
+  [ "$end" -gt "$count" ] && end=$count
+
+  local current_cmd=""
+  local current_loc=""
+  if [ "$count" -gt 0 ]; then
+    current_cmd="${FILTERED[SEL]}"
+    current_loc=$(type -P -- "$current_cmd" 2>/dev/null || type -t -- "$current_cmd" 2>/dev/null || echo "command")
+  fi
+
+  {
+    printf '\033[H\033[2J'
+    printf '\033[1;36mTarlix Commands\033[0m \033[90m(%d/%d)\033[0m\n' "$count" "$TOTAL"
+    printf '\033[1;36m>\033[0m %s\033[K\n' "$QUERY"
+    printf '\033[90m  Up/Down: move | Enter: info | Ctrl+U: clear | Esc: quit\033[0m\n'
+    for ((i = start; i < end; i++)); do
+      local c="${FILTERED[i]}"
+      local tag=""
+      [ -x "$REPO_BIN/$c" ] && tag=" \033[1;36m[tarlix]\033[0m"
+      if [ "$i" -eq "$SEL" ]; then
+        printf '\033[1;32m> \033[7m%s\033[0m%b\n' "$c" "$tag"
+      else
+        printf '  %s%b\n' "$c" "$tag"
+      fi
+    done
+    if [ -n "$current_cmd" ]; then
+      printf '\n\033[90mLocation: \033[0m%s\n' "$current_loc"
+    fi
+  } >/dev/tty
+}
+
+show_info() {
+  local c="$1"
+  local loc
+  loc=$(type -a -- "$c" 2>/dev/null | head -n 4)
+  local desc
+  desc=$(whatis "$c" 2>/dev/null | head -n 3 || true)
+  {
+    printf '\033[H\033[2J'
+    printf '\033[1;36mCommand:\033[0m %s\n\n' "$c"
+    printf '\033[1;34mType / Path:\033[0m\n%s\n\n' "${loc:-unknown}"
+    if [ -n "$desc" ]; then
+      printf '\033[1;34mSummary:\033[0m\n%s\n\n' "$desc"
+    fi
+    printf '\033[90mPress any key to return...\033[0m\n'
+  } >/dev/tty
+  IFS= read -rsn1 _ </dev/tty || true
+}
+
+draw
+
+while IFS= read -rsn1 key </dev/tty; do
+  case "$key" in
+    "")
+      if [ ${#FILTERED[@]} -gt 0 ]; then
+        show_info "${FILTERED[SEL]}"
+      fi
+      ;;
+    $'\x1b')
+      read -rsn2 -t 0.05 seq </dev/tty || seq=""
+      case "$seq" in
+        "[A") [ "$SEL" -gt 0 ] && SEL=$((SEL - 1)) ;;
+        "[B") [ $((SEL + 1)) -lt ${#FILTERED[@]} ] && SEL=$((SEL + 1)) ;;
+        "") exit 0 ;;
+      esac
+      ;;
+    $'\x7f'|$'\x08')
+      [ -n "$QUERY" ] && QUERY="${QUERY%?}"
+      SEL=0
+      filter_cmds
+      ;;
+    $'\x10')
+      [ "$SEL" -gt 0 ] && SEL=$((SEL - 1))
+      ;;
+    $'\x0e')
+      [ $((SEL + 1)) -lt ${#FILTERED[@]} ] && SEL=$((SEL + 1))
+      ;;
+    $'\x15')
+      QUERY=""
+      SEL=0
+      filter_cmds
+      ;;
+    *)
+      if [[ "$key" =~ [[:print:]] ]]; then
+        QUERY+="$key"
+        SEL=0
+        filter_cmds
+      fi
+      ;;
+  esac
+  draw
+done
