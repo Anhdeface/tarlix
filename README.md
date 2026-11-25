@@ -1,10 +1,17 @@
-# tarlix
+# Tarlix
 
-## Open in GitHub Codespaces
+Tarlix is a lightweight, browser-accessible Ubuntu Linux terminal built on GitHub Codespaces and `ttyd`. It gives you a ready-to-use cloud shell on desktop or mobile without installing a local IDE or terminal app.
 
-1. Click **Code** -> **Codespaces** -> **Create codespace on main** to launch the Linux terminal environment.
-## Open Pure Web Terminal on Mobile
+## How It Works
 
-1. Once the Codespace starts, open the **Ports** tab and select **Tarlix Web Terminal (7681)**.
-2. Open the forwarded **private HTTPS link** in your mobile browser (accessible only with your GitHub account).
-3. Your terminal runs inside a persistent `tmux` session (`main`), so you will not lose your session when turning off your screen.
+When a Codespace starts from this repository, `.devcontainer/devcontainer.json` sets up a minimal Ubuntu LTS container, installs `ttyd`, and starts a private web terminal on port `7681`. Custom pure-Bash utilities in `bin/` and modular shortcuts in `config/aliases.sh` are loaded automatically on startup.
+
+## Usage
+
+1. Select **Code -> Codespaces -> Create codespace on main**.
+2. Open the forwarded port **7681 (Tarlix Web Terminal)** in your browser.
+3. Bookmark the `...-7681.app.github.dev` link for direct access next time.
+
+On mobile browsers, turn off **Desktop site** on the port `7681` tab for proper screen scaling.
+
+Once inside the terminal, run `allcmd` to browse available commands or `alitarlix` to view registered shortcuts.
