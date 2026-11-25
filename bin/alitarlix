@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# Display Tarlix alias/shortcut table (<original> -> <shortcut>)
+# Always update this table whenever new shortcuts are added to .devcontainer/tarlix.bashrc
+
+set -u
+
+C1="\033[1;36m"
+C2="\033[1;32m"
+DIM="\033[90m"
+RESET="\033[0m"
+
+ENTRIES=(
+  "cd <path>|j <path>"
+  "cd ~|j h"
+  "cd /workspaces/tarlix|j w"
+  "cd -|j -"
+  "cd (fzf dir picker)|j f"
+  "clear|c"
+)
+
+cleanup() {
+  printf '\033[?25h\033[?1049l' >/dev/tty 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
+printf '\033[?1049h\033[?25l' >/dev/tty
+
+draw() {
+  local buf="${1:-}"
+  {
+    printf '\033[H\033[2J'
+    printf "${C1}Tarlix Aliases${RESET} ${DIM}(<nguyen ban> -> <viet tat>)${RESET}\n"
+    printf "${DIM}----------------------------------------${RESET}\n"
+    local entry orig short
+    for entry in "${ENTRIES[@]}"; do
+      orig="${entry%%|*}"
+      short="${entry#*|}"
+      printf "  %-22s ${DIM}->${RESET} ${C2}%s${RESET}\n" "$orig" "$short"
+    done
+    printf "\n${DIM}Nhan Esc hoac go :q de thoat${RESET}"
+    [ -n "$buf" ] && printf "  ${C1}%s${RESET}" "$buf"
+    printf "\033[K\n"
+  } >/dev/tty
+}
+
+BUF=""
+draw "$BUF"
+
+while IFS= read -rsn1 key </dev/tty; do
+  case "$key" in
+    $'\x1b')
+      read -rsn2 -t 0.05 _ </dev/tty || true
+      exit 0
+      ;;
+    "")
+      [ "$BUF" = ":q" ] && exit 0
+      BUF=""
+      ;;
+    $'\x7f'|$'\x08')
+      [ -n "$BUF" ] && BUF="${BUF%?}"
+      ;;
+    *)
+      if [[ "$key" =~ [[:print:]] ]]; then
+        BUF+="$key"
+        [ "$BUF" = ":q" ] && exit 0
+        [ ${#BUF} -gt 2 ] && BUF="$key"
+      fi
+      ;;
+  esac
+  draw "$BUF"
+done
