@@ -10,6 +10,15 @@
     "ghcr.io/devcontainers/features/python:1": {},
     "ghcr.io/devcontainers/features/node:1": {}
   },
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y tmux neovim htop jq ripgrep fzf tree build-essential",
+  "forwardPorts": [7681],
+  "portsAttributes": {
+    "7681": {
+      "label": "Tarlix Web Terminal",
+      "onAutoForward": "notify",
+      "visibility": "private"
+    }
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y ttyd tmux neovim htop jq ripgrep fzf tree build-essential && chmod +x .devcontainer/start-terminal.sh",
+  "postStartCommand": "bash .devcontainer/start-terminal.sh",
   "remoteUser": "vscode"
 }
