@@ -1,30 +1,11 @@
-# Static Bash config for Tarlix (Powerlevel10k-inspired, mobile + desktop)
+# Static Bash config for Tarlix (modular, mobile + desktop)
 [ -f "$HOME/.bashrc" ] && source "$HOME/.bashrc"
 
 export PATH="/workspaces/tarlix/bin:$HOME/bin:$PATH"
 stty erase '^?' 2>/dev/null || true
 
-# Shortcuts (keep synced with bin/alitarlix)
-alias c='clear'
-
-j() {
-  case "${1:-}" in
-    ""|"h")
-      cd "$HOME" || return
-      ;;
-    "w")
-      cd /workspaces/tarlix || return
-      ;;
-    "f")
-      local target
-      target=$(find . -maxdepth 4 -type d -not -path '*/.*' 2>/dev/null | sed 's|^\./||' | sort | fzf)
-      [ -n "$target" ] && cd "$target"
-      ;;
-    *)
-      cd "$@" || return
-      ;;
-  esac
-}
+# Load modular shortcuts & aliases
+[ -f /workspaces/tarlix/config/aliases.sh ] && source /workspaces/tarlix/config/aliases.sh
 
 __tarlix_git_branch() {
   local dir="$PWD" head
