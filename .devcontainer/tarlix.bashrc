@@ -4,6 +4,28 @@
 export PATH="/workspaces/tarlix/bin:$HOME/bin:$PATH"
 stty erase '^?' 2>/dev/null || true
 
+# Shortcuts (keep synced with bin/alitarlix)
+alias c='clear'
+
+j() {
+  case "${1:-}" in
+    ""|"h")
+      cd "$HOME" || return
+      ;;
+    "w")
+      cd /workspaces/tarlix || return
+      ;;
+    "f")
+      local target
+      target=$(find . -maxdepth 4 -type d -not -path '*/.*' 2>/dev/null | sed 's|^\./||' | sort | fzf)
+      [ -n "$target" ] && cd "$target"
+      ;;
+    *)
+      cd "$@" || return
+      ;;
+  esac
+}
+
 __tarlix_git_branch() {
   local dir="$PWD" head
   while [ "$dir" != "/" ] && [ -n "$dir" ]; do
