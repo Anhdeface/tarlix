@@ -16,7 +16,13 @@ if [ "${1:-}" = "--restart" ]; then
 fi
 
 if ! pgrep -x ttyd >/dev/null 2>&1; then
-  nohup setsid ttyd -W -p 7681 -w /home/vscode -t fontSize=16 -t disableLeaveAlert=true \
+  nohup setsid ttyd -W -p 7681 -w /home/vscode \
+    -t rendererType=dom \
+    -t scrollback=500 \
+    -t fontSize=16 \
+    -t cursorStyle=bar \
+    -t disableResizeOverlay=true \
+    -t disableLeaveAlert=true \
     bash "$SCRIPT_DIR/tarlix-shell.sh" \
     </dev/null >/tmp/ttyd.log 2>&1 &
   disown || true
