@@ -2,7 +2,59 @@
 
 C1="\033[1;36m"
 C2="\033[1;34m"
+DIM="\033[90m"
 RESET="\033[0m"
+
+COLS=$(tput cols 2>/dev/null || echo 80)
+USER_HOST="${USER:-$(whoami)}@$(hostname)"
+OS=$(grep -m1 '^PRETTY_NAME=' /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"')
+KERNEL=$(uname -r | cut -d- -f1)
+UPTIME=$(uptime -p 2>/dev/null | sed 's/^up //')
+SHELL_NAME=$(basename "${SHELL:-bash}")
+CORES=$(nproc 2>/dev/null || echo "?")
+MEM=$(free -h 2>/dev/null | awk '/^Mem:/ {print $3 "/" $2}')
+DISK=$(df -h / 2>/dev/null | awk 'NR==2 {print $3 "/" $2 " (" $5 ")"}')
+
+LOGO=(
+"  _____           _ _      "
+" |_   _|_ _ _ __ | (_)_  __"
+"   | |/ _\` | '__|| | \\ \\/ /"
+"   | | (_| | |   | | |>  < "
+"   |_|\\__,_|_|   |_|_/_/\\_\\"
+"                           "
+"     TARLIX CLOUD SHELL    "
+)
+
+INFO=(
+"${C1}${USER_HOST}${RESET}"
+"-----------------------"
+"${C2}Project${RESET}: Tarlix"
+"${C2}OS${RESET}:      ${OS:-Linux}"
+"${C2}Kernel${RESET}:  ${KERNEL}"
+"${C2}Uptime${RESET}:  ${UPTIME:-unknown}"
+"${C2}Shell${RESET}:   ${SHELL_NAME} (${CORES}c)"
+"${C2}Memory${RESET}:  ${MEM:-unknown}"
+"${C2}Disk${RESET}:    ${DISK:-unknown}"
+"${DIM}Tip: run 'allcmd' for commands${RESET}"
+)
+
+echo ""
+if [ "$COLS" -ge 68 ]; then
+  MAX=${#LOGO[@]}
+  [ ${#INFO[@]} -gt $MAX ] && MAX=${#INFO[@]}
+  for ((i=0; i<MAX; i++)); do
+    printf "${C1}%-28s${RESET}  %b\n" "${LOGO[i]:-}" "${INFO[i]:-}"
+  done
+else
+  for line in "${LOGO[@]}"; do
+    printf "${C1}%s${RESET}\n" "$line"
+  done
+  echo ""
+  for line in "${INFO[@]}"; do
+    printf "%b\n" "$line"
+  done
+fi
+echo ""
 
 USER_HOST="${USER:-$(whoami)}@$(hostname)"
 OS=$(grep -m1 '^PRETTY_NAME=' /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"')
