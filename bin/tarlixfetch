@@ -6,7 +6,7 @@ DIM="\033[90m"
 RESET="\033[0m"
 
 COLS=$(tput cols 2>/dev/null || echo 80)
-USER_HOST="${USER:-$(whoami)}@$(hostname)"
+USER_HOST="${GITHUB_USER:-$(whoami)}@tarlix"
 OS=$(grep -m1 '^PRETTY_NAME=' /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"')
 KERNEL=$(uname -r | cut -d- -f1)
 UPTIME=$(uptime -p 2>/dev/null | sed 's/^up //')
