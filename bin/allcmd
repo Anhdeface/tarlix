@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Interactive command browser for Tarlix (pure Bash, clean alternate-screen TUI)
+# Interactive command browser for Tarlix (mobile + desktop friendly, pure Bash)
 
 set -u
 
@@ -10,8 +10,16 @@ TOTAL=${#ALL_CMDS[@]}
 
 QUERY=""
 SEL=0
-MAX_SHOW=14
 FILTERED=("${ALL_CMDS[@]}")
+
+get_max_show() {
+  local lines
+  lines=$(tput lines 2>/dev/null || echo 20)
+  local m=$((lines - 6))
+  [ "$m" -lt 4 ] && m=4
+  [ "$m" -gt 16 ] && m=16
+  echo "$m"
+}
 
 filter_cmds() {
   if [ -z "$QUERY" ]; then
@@ -46,12 +54,16 @@ trap cleanup EXIT INT TERM
 printf '\033[?1049h\033[?25l' >/dev/tty
 
 draw() {
+  local max_show cols
+  max_show=$(get_max_show)
+  cols=$(tput cols 2>/dev/null || echo 80)
+
   local count=${#FILTERED[@]}
   local start=0
-  if [ "$SEL" -ge "$MAX_SHOW" ]; then
-    start=$((SEL - MAX_SHOW + 1))
+  if [ "$SEL" -ge "$max_show" ]; then
+    start=$((SEL - max_show + 1))
   fi
-  local end=$((start + MAX_SHOW))
+  local end=$((start + max_show))
   [ "$end" -gt "$count" ] && end=$count
 
   local current_cmd=""
@@ -65,7 +77,11 @@ draw() {
     printf '\033[H\033[2J'
     printf '\033[1;36mTarlix Commands\033[0m \033[90m(%d/%d)\033[0m\n' "$count" "$TOTAL"
     printf '\033[1;36m>\033[0m %s\033[K\n' "$QUERY"
-    printf '\033[90m  Up/Down: move | Enter: info | Ctrl+U: clear | Esc: quit\033[0m\n'
+    if [ "$cols" -lt 60 ]; then
+      printf '\033[90mEnter:info | :q/Esc:quit\033[0m\n'
+    else
+      printf '\033[90mUp/Down: move | Enter: info | :q or Esc: quit\033[0m\n'
+    fi
     for ((i = start; i < end; i++)); do
       local c="${FILTERED[i]}"
       local tag=""
@@ -77,16 +93,15 @@ draw() {
       fi
     done
     if [ -n "$current_cmd" ]; then
-      printf '\n\033[90mLocation: \033[0m%s\n' "$current_loc"
+      printf '\n\033[90mPath:\033[0m %s\n' "$current_loc"
     fi
   } >/dev/tty
 }
 
 show_info() {
   local c="$1"
-  local loc
+  local loc desc
   loc=$(type -a -- "$c" 2>/dev/null | head -n 4)
-  local desc
   desc=$(whatis "$c" 2>/dev/null | head -n 3 || true)
   {
     printf '\033[H\033[2J'
@@ -105,7 +120,9 @@ draw
 while IFS= read -rsn1 key </dev/tty; do
   case "$key" in
     "")
-      if [ ${#FILTERED[@]} -gt 0 ]; then
+      if [ "$QUERY" = ":q" ]; then
+        exit 0
+      elif [ ${#FILTERED[@]} -gt 0 ]; then
         show_info "${FILTERED[SEL]}"
       fi
       ;;
@@ -136,6 +153,7 @@ while IFS= read -rsn1 key </dev/tty; do
     *)
       if [[ "$key" =~ [[:print:]] ]]; then
         QUERY+="$key"
+        [ "$QUERY" = ":q" ] && exit 0
         SEL=0
         filter_cmds
       fi
