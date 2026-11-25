@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+C1="\033[1;36m"
+C2="\033[1;34m"
+RESET="\033[0m"
+
+USER_HOST="${USER:-$(whoami)}@$(hostname)"
+OS=$(grep -m1 '^PRETTY_NAME=' /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"')
+KERNEL=$(uname -r)
+UPTIME=$(uptime -p 2>/dev/null | sed 's/^up //')
+SHELL_NAME=$(basename "${SHELL:-bash}")
+CPU=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | sed 's/^ //')
+CORES=$(nproc 2>/dev/null)
+MEM=$(free -h 2>/dev/null | awk '/^Mem:/ {print $3 " / " $2}')
+DISK=$(df -h / 2>/dev/null | awk 'NR==2 {print $3 " / " $2 " (" $5 ")"}')
+
+LOGO=(
+"  _____           _ _      "
+" |_   _|_ _ _ __ | (_)_  __"
+"   | |/ _\` | '__|| | \\ \\/ /"
+"   | | (_| | |   | | |>  < "
+"   |_|\\__,_|_|   |_|_/_/\\_\\"
+"                           "
+"     TARLIX CLOUD SHELL    "
+"                           "
+)
+
+INFO=(
+"${C1}${USER_HOST}${RESET}"
+"---------------------------"
+"${C2}Project${RESET}: Tarlix"
+"${C2}OS${RESET}:      ${OS:-Linux}"
+"${C2}Kernel${RESET}:  ${KERNEL}"
+"${C2}Uptime${RESET}:  ${UPTIME:-unknown}"
+"${C2}Shell${RESET}:   ${SHELL_NAME}"
+"${C2}CPU${RESET}:     ${CPU:-unknown} (${CORES} cores)"
+"${C2}Memory${RESET}:  ${MEM:-unknown}"
+"${C2}Disk${RESET}:    ${DISK:-unknown}"
+)
+
+MAX=${#LOGO[@]}
+[ ${#INFO[@]} -gt $MAX ] && MAX=${#INFO[@]}
+
+echo ""
+for ((i=0; i<MAX; i++)); do
+  printf "${C1}%-30s${RESET}  %b\n" "${LOGO[i]:-}" "${INFO[i]:-}"
+done
+echo ""
