@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-[ ! -x /workspaces/tarlix/bin/tarlixfetch ] && chmod +x /workspaces/tarlix/bin/* 2>/dev/null || true
+find /workspaces/tarlix/bin -type f ! -executable -exec chmod +x {} + 2>/dev/null || true
 export PATH="/workspaces/tarlix/bin:$HOME/bin:$PATH"
 export SHELL="/bin/bash"
 cd /home/vscode
