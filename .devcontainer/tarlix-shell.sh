@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
+export PATH="/workspaces/tarlix/bin:$HOME/bin:$PATH"
+export SHELL="/bin/bash"
 cd /home/vscode
 clear
-cat << 'EOF'
-========================================
-  TARLIX CLOUD TERMINAL
-  Du an: Tarlix
-========================================
-EOF
-echo "User: $(whoami) | Dir: $(pwd)"
-echo ""
-exec bash
+if command -v tarlixfetch >/dev/null 2>&1; then
+  tarlixfetch
+fi
+exec /bin/bash
