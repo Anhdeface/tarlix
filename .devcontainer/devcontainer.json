@@ -1,0 +1,15 @@
+{
+  "name": "Tarlix Linux Terminal",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "installOhMyZsh": true
+    },
+    "ghcr.io/devcontainers/features/python:1": {},
+    "ghcr.io/devcontainers/features/node:1": {}
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y tmux neovim htop jq ripgrep fzf tree build-essential",
+  "remoteUser": "vscode"
+}
