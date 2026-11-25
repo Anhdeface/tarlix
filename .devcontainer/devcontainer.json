@@ -1,6 +1,6 @@
 {
   "name": "Tarlix Fast Terminal",
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "forwardPorts": [7681],
   "portsAttributes": {
     "7681": {
@@ -18,5 +18,6 @@
     }
   },
   "postCreateCommand": "sudo curl -sSL \"https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.$(uname -m)\" -o /usr/local/bin/ttyd && sudo chmod +x /usr/local/bin/ttyd && chmod +x .devcontainer/start-terminal.sh",
-  "postStartCommand": "bash .devcontainer/start-terminal.sh"
+  "postStartCommand": "bash .devcontainer/start-terminal.sh",
+  "remoteUser": "vscode"
 }
